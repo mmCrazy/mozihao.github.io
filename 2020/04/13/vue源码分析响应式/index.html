@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="tes, mozihao github">
+    <meta name="keywords" content="Vue源码分析--watch和computed的执行过程, mozihao github">
     <meta name="description" content="if you risk nothing,then you risk anthing">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -16,7 +16,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>tes | mozihao</title>
+    <title>Vue源码分析--watch和computed的执行过程 | mozihao</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.css">
@@ -286,12 +286,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/6.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/2.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">tes</h1>
+                    <h1 class="description center-align post-title">Vue源码分析--watch和computed的执行过程</h1>
                 </div>
             </div>
         </div>
@@ -414,12 +414,33 @@
             <div class="row tag-cate">
                 <div class="col s7">
                     
-                          <div class="article-tag">
-                            <span class="chip bg-color">无标签</span>
-                          </div>
+                    <div class="article-tag">
+                        
+                            <a href="/tags/vue/">
+                                <span class="chip bg-color">vue</span>
+                            </a>
+                        
+                            <a href="/tags/node/">
+                                <span class="chip bg-color">node</span>
+                            </a>
+                        
+                            <a href="/tags/javaScript/">
+                                <span class="chip bg-color">javaScript</span>
+                            </a>
+                        
+                    </div>
                     
                 </div>
                 <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fas fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/vue/" class="post-category">
+                                vue
+                            </a>
+                        
+                    </div>
                     
                 </div>
             </div>
@@ -444,7 +465,14 @@
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                
+                <p>首先先调用initState方法，进入 initMethods、initData方法，获取到方法和data数据，再进入observe，执行initComputed和initWatch</p>
+<p>initComputed：<br>initComputed方法定义computedWatchers，再遍历computed对象拿到对应的每个key，然后赋值给getter，然后实例化一个wathers（new Watcher），将当前的实例push到vm.watchers中,然后此时dirty和computed一致都为true，然后创建deps，和set实例对象，而value此时是为空的（因为computed是延迟计算的），然后实例化一个Dep的对象，然后执行dep.depend方法将渲染watcher收集subs中，然后进入watcher.evalute方法进行求值调用this.get这个过程中执行pushTarget方法将computed watcher push到Dep.target中将渲染watcher替代然后执行get.call，最后将value返回,然后将dirty置为false，然后将return value，然后渲染文案<br>当数据发生变化，执行set调用reactiveSetter，对比新新旧值，若果相等则不会触发cb就是不会触发渲染watcher的update，如不相等而且computed为true然后判断dep.subs.length，因为长度不为0，然后执行getAndInvoke方法，然后进行一次重新求值最后执行dep.notify遍历subs调用渲染watcher（vm._render）的update方法，执行queueWatcher进行重新渲染，</p>
+<p>initWatch：<br>调用initWatch，遍历watch，拿到对应的handler函数，再调用createWatcher做数据的规范化，转成期望的类型，$watch将callback变成函数，将user置为true，则这个watch为user watcher,然后执行new watcher，如果是函数则直接赋值给getter，如果是字符串则会调用paresPath将路径变成数组返回然后返回一个函数给getter，然后执行get进行求值，调用pushTarget将dep.target赋值为user watcher，用user watcher订阅了依赖的变化，然后执行getter方法就是paresPath返回的函数，然后会触发dep.depend，将user watcher订阅到dep中，然后调用popTarget和cleanupDeps，然后再进行一个返回return value<br>一旦计算属性发生变化的时候执行set调用reactiveSetter方法，执行dep.notify，调用subs里面的订阅者的update方法，判断sync如果为true，则执行this.run(所以这里为什么将sync置为true可以提高优先级的原因了)。否则执行queueWatcher的过程就是把watcher添加到watcher队列里面，然后进入nextTick后执行flush，执行Watcher.run方法，下面的this.run的执行</p>
+<p>（判断sync，如果为true，则执行this.run然后跳用getAndInvoke方法这里面会进行一次get求新值，对比前后的value值，若数据发生了变化就将dirty置为false，（如果dirty为true会调用evaluate方法再执行一次get，然后将dirty置为false，再返回这个value），然后执行watcher定义的回调函数callback，直接调用函数调用dep.notify通知user watcher的update然后进行user watcher的一个回调handler，user watcher会订阅computedWatcher的dep 调用popTarget和cleanupDeps，然后再进行一个返回return value）</p>
+<p>（然后判断deep，如果为true则执行traverse方法会深度遍历对象然后给每个属性进行监听，然后调用popTarget和cleanupDeps，然后再进行一个返回return value）</p>
+<p>deep深度监听有一个traverse函数，</p>
+<p>若进行深度监听deep，想提升优先级可以将sync置为true则会优先执行，因为默认的user watcher都是异步的也就是在nextTick才会执行回调</p>
+
             </div>
             <hr/>
 
@@ -469,7 +497,7 @@
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="http://yoursite.com/tes/index.html">http://yoursite.com/tes/index.html</a>
+                    <a href="http://yoursite.com/2020/04/13/vue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%93%8D%E5%BA%94%E5%BC%8F/">http://yoursite.com/2020/04/13/vue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%93%8D%E5%BA%94%E5%BC%8F/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -506,7 +534,19 @@
                 <div class="post-meta__tag-list" style="display: inline-block;">
                     
                         <div class="article-tag">
-                            <span class="chip bg-color">无标签</span>
+                            
+                                <a href="/tags/vue/">
+                                    <span class="chip bg-color">vue</span>
+                                </a>
+                            
+                                <a href="/tags/node/">
+                                    <span class="chip bg-color">node</span>
+                                </a>
+                            
+                                <a href="/tags/javaScript/">
+                                    <span class="chip bg-color">javaScript</span>
+                                </a>
+                            
                         </div>
                     
                 </div>
@@ -677,19 +717,20 @@
                 <i class="far fa-dot-circle"></i>&nbsp;本篇
             </div>
             <div class="card">
-                <a href="/tes/index.html">
+                <a href="/2020/04/13/vue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%93%8D%E5%BA%94%E5%BC%8F/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/6.jpg" class="responsive-img" alt="tes">
+                        <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="Vue源码分析--watch和computed的执行过程">
                         
-                        <span class="card-title">tes</span>
+                        <span class="card-title">Vue源码分析--watch和computed的执行过程</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            
+                            首先先调用initState方法，进入 initMethods、initData方法，获取到方法和data数据，再进入observe，执行initComputed和initWatch
+initComputed：initComputed方法定
                         
                     </div>
                     <div class="publish-info">
@@ -698,13 +739,33 @@
                             </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-user fa-fw"></i>
-                            mozihao
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/vue/" class="post-category">
+                                    vue
+                                </a>
+                            
                             
                         </span>
                     </div>
                 </div>
 
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/vue/">
+                        <span class="chip bg-color">vue</span>
+                    </a>
+                    
+                    <a href="/tags/node/">
+                        <span class="chip bg-color">node</span>
+                    </a>
+                    
+                    <a href="/tags/javaScript/">
+                        <span class="chip bg-color">javaScript</span>
+                    </a>
+                    
+                </div>
                 
             </div>
         </div>
@@ -712,22 +773,22 @@
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge right-badge text-color">
-                本篇&nbsp;<i class="far fa-dot-circle"></i>
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/tes/index.html">
+                <a href="/2020/04/13/hello-world/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/6.jpg" class="responsive-img" alt="tes">
+                        <img src="/medias/featureimages/7.jpg" class="responsive-img" alt="Hello World">
                         
-                        <span class="card-title">tes</span>
+                        <span class="card-title">Hello World</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            
+                            Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hex
                         
                     </div>
                     <div class="publish-info">
@@ -742,7 +803,6 @@
                         </span>
                     </div>
                 </div>
-
                 
             </div>
         </div>
